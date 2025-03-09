@@ -6,12 +6,14 @@
 
 Rendered templates can be used with the Ollama `/api/generate` endpoint with the `raw` flag enabled to avoid model rebuild/redeploy/restart.
 
-## Build
+Web Version is deployed here: https://eugene-kamenev.github.io/ollama-template-test/
+
+## Local Build
 ```bash
 make clean && make all
 ```
 
-## Run Web Version
+## Local Run Web Version
 Start nginx
 ```bash
 docker compose up -d
