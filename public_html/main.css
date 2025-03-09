@@ -1,0 +1,99 @@
+:root {
+    --pico-font-family-sans-serif: Inter, system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif, var(--pico-font-family-emoji);
+    --pico-font-size: 87.5%;
+    --pico-line-height: 1.25;
+    --pico-form-element-spacing-vertical: 0.5rem;
+    --pico-form-element-spacing-horizontal: 1.0rem;
+    --pico-border-radius: 0.375rem;
+}
+
+@media (min-width: 576px) {
+    :root {
+        --pico-font-size: 87.5%;
+    }
+}
+
+@media (min-width: 768px) {
+    :root {
+        --pico-font-size: 87.5%;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --pico-font-size: 87.5%;
+    }
+}
+
+@media (min-width: 1280px) {
+    :root {
+        --pico-font-size: 87.5%;
+    }
+}
+
+@media (min-width: 1536px) {
+    :root {
+        --pico-font-size: 87.5%;
+    }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    --pico-font-weight: 600;
+}
+
+article {
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: calc(var(--pico-border-radius) * 2);
+}
+
+article>footer {
+    border-radius: calc(var(--pico-border-radius) * 2);
+}
+
+.diff-removed {
+	text-decoration: none;
+	color: #b30000;
+	background: #fadad7;
+}
+.diff-added {
+	background: #eaf2c2;
+	color: #406619;
+	text-decoration: none;
+}
+
+.output {
+    overflow: auto;
+    white-space: pre-wrap;
+    border-collapse: separate;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #008cba;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

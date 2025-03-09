@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ollama Template Test</title>
+    <!-- https://unpkg.com/@picocss/pico@latest/css/pico.min.css -->
+    <link rel="stylesheet" href="vendor/pico.min.css" />
+    <link rel="stylesheet" href="main.css"  />
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.3/full/pyodide.js"></script>
+    <!-- https://unpkg.com/vue@3/dist/vue.global.js -->
+    <script src="vendor/vue.global.js"></script>
+    <!-- https://cdn.jsdelivr.net/npm/vue-demi@0.14.10/lib/index.iife.min.js -->
+    <script src="vendor/index.iife.min.js"></script>
+    <!-- https://cdn.jsdelivr.net/npm/@monaco-editor/loader@1.5.0/lib/umd/monaco-loader.min.js -->
+    <script src="vendor/monaco-loader.min.js"></script>
+    <!-- https://cdn.jsdelivr.net/npm/@guolao/vue-monaco-editor@1.5.4/lib/umd/monaco-vue.min.js -->
+    <script src="vendor/monaco-vue.min.js"></script>
+    <!-- from go-lang sources -->
+    <script src="vendor/wasm_exec.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div v-if="loadingGeneral" class="loading-overlay">
+        <div class="spinner"></div> Loading...
+      </div>
+      <header>
+        <nav class="container">
+          <ul class="menu">
+            <li v-for="tab in tabs" :key="tab.id">
+              <button @click="activeTab = tab.id" :class="[{ [outline]: activeTab === tab.id }, contrast]">{{ tab.name }}</button>
+            </li>
+          </ul>
+        </nav>
+      </header>
+      <main class="container">
+        <div v-if="activeTab==='ollama'">
+          <h2>Ollama Model Template Test</h2>
+          <div class="textareaContainer">
+            <ollama-template v-model="ollamaTemplate"></ollama-template>
+            <chat-history v-model="chatHistory"></chat-history>
+          </div>
+          <br />
+          <button class="contrast" @click="callValidateModelTemplate" :disabled="loadingAction || loadingGeneral">
+            Render Ollama Template <span v-if="loadingAction || loadingGeneral">Loading...</span>
+          </button>
+          <br /><br />
+          <label for="output_type">Output type:</label>
+          <select id="output_type" v-model="outputType">
+            <option value="default">Default</option>
+            <option value="escaped">Escaped</option>
+          </select>
+          <output-display id="output" :content="ollamaOutput" title="Ollama render"></output-display>
+        </div>
+        <div v-if="activeTab==='jinja'">
+          <h2>Jinja2 Chat Template Test (tokenizer_config.json)</h2>
+          <div class="textareaContainer view-section">
+            <jinja-template v-model="jinjaTemplate"></jinja-template>
+            <jinja-script v-model="preRenderScript"></jinja-script>
+            <chat-history :textareaId="'conversation_jinja'" v-model="chatHistory"></chat-history>
+          </div>
+          <br />
+          <button class="contrast" @click="callValidateJinjaTemplate" :disabled="loadingAction || loadingGeneral">
+            Render Jinja Template <span v-if="loadingAction || loadingGeneral">Loading...</span>
+          </button>
+          <br /><br />
+          <label for="jinja_output_type">Output type:</label>
+          <select id="jinja_output_type" v-model="outputType">
+            <option value="default">Default</option>
+            <option value="escaped">Escaped</option>
+          </select>
+          <output-display id="jinja-output" :content="jinjaOutput" title="Jinja render"></output-display>
+        </div>
+        <div v-if="activeTab==='tool'">
+          <h2>Ollama Tool Call Check</h2>
+          <div class="textareaContainer">
+            <ollama-template :textareaId="'template_tool'" v-model="ollamaTemplate"></ollama-template>
+            <llm-output-textarea v-model="llmOutput"></llm-output-textarea>
+          </div>
+          <br />
+          <button class="contrast" @click="callToolCheck" :disabled="loadingAction || loadingGeneral">
+            Run Tool Check <span v-if="loadingAction || loadingGeneral">Loading...</span>
+          </button>
+          <br /><br />
+          <pre id="toolOutput" class="output">{{ toolCheckOutput }}</pre>
+        </div>
+        <div v-if="activeTab==='diff'">
+          <h2>Chat Template Render Difference (Ollama vs Jinja2)</h2>
+          <div class="textareaContainer">
+            <ollama-template :textareaId="'template_diff'" v-model="ollamaTemplate"></ollama-template>
+            <jinja-template :textareaId="'jinja-template_diff'" v-model="jinjaTemplate"></jinja-template>
+            <jinja-script :textareaId="'jinja-script_diff'" v-model="preRenderScript"></jinja-script>
+            <chat-history :textareaId="'conversation_diff'" v-model="chatHistory"></chat-history>
+          </div>
+          <br />
+          <button class="contrast" @click="callBothTemplates" :disabled="loadingAction || loadingGeneral">
+            Render and Diff Templates <span v-if="loadingAction || loadingGeneral">Loading...</span>
+          </button>
+          <br /><br />
+          <output-display id="ollama-output" :content="ollamaOutput" title="Ollama render" v-if="ollamaOutput"></output-display>
+          <output-display id="jinja-output" :content="jinjaOutput" title="Jinja render" v-if="jinjaOutput"></output-display>
+          <hr />
+          <div v-if="ollamaOutput && jinjaOutput">
+            <vue-monaco-diff-editor
+              theme="vs-dark"
+              :original="ollamaOutput"
+              :modified="jinjaOutput"
+              :options="diffViewOptions"
+              language="text"
+              style="height:180px;border:1px solid #ddd;"
+            />
+          </div>
+        </div>
+        <div v-if="activeTab==='about'">
+          <h2>About This Project</h2>
+          <p>
+            This project helps to validate chat templates without building and deploying the model. Rendered chat templates can be used as raw requests to orignal model. It also allows to compare template rendering using both Ollama and Jinja2.
+            It also demonstrates tool call validations and provides a playground for template experimentation.
+            <br />
+            <br />
+            This project demonstrates the usage of:
+            <ul>
+              <li>Go sources compiled for WebAssembly usage in the browser which call functions from Ollama source</li>
+              <li>Pyodide WebAssembly to call python and render Jinja2 templates.</li>
+              <li>Microsoft Monaco Editor</li>
+              <li>Vue 3 for this JS App</li>
+              <li>Pico CSS</li>
+            </ul>
+          </p>
+          <p>
+            <a href="https://github.com/eugene-kamenev/ollama-chat-template-test">Source code.</a>
+          </p>
+          <p>
+            Built for community by Eugene Kamenev.
+          </p>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script type="text/x-template" id="collapsible-textarea-template">
+      <details class="view-section collapsible-editor" @toggle="handleToggle">
+        <summary class="outline contrast" role="button">{{ title }}</summary>
+        <label :for="id">{{ label }}</label>
+        <vue-monaco-editor v-model:value="internalValue" :language="language" theme="vs-dark" :options="editorOptions" style="height:25em;border:1px solid #ddd;"></vue-monaco-editor>
+      </details>
+    </script>
+    <script type="text/x-template" id="output-display-template">
+      <article>
+        <header>
+          <div class="grid" style="grid-template-columns: 1fr auto; align-items: center;">
+            <div>{{ title }}</div>
+            <button @click="copyContent" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Copy</button>
+          </div>  
+        </header>
+        <pre class="output">{{ content }}</pre>
+      </article>
+    </script>
+    <script type="text/x-template" id="ollama-template-template">
+      <collapsible-textarea 
+          :id="textareaId"
+          title="Ollama Model Chat Template"
+          language="go" 
+          placeholder="Enter Ollama model template" 
+          :modelValue="modelValue" 
+          @update:modelValue="$emit('update:modelValue', $event)">
+      </collapsible-textarea>
+    </script>
+    <script type="text/x-template" id="chat-history-template">
+      <collapsible-textarea 
+          :id="textareaId"
+          title="Chat History JSON"
+          language="json" 
+          placeholder="Enter chat history in JSON format" 
+          :modelValue="modelValue" 
+          @update:modelValue="$emit('update:modelValue', $event)">
+      </collapsible-textarea>
+    </script>
+    <script type="text/x-template" id="jinja-template-template">
+      <collapsible-textarea 
+          :id="textareaId"
+          title="Jinja2 Chat Template (tokenizer_config.json)"
+          language="python" 
+          placeholder="Enter Jinja template content" 
+          :modelValue="modelValue" 
+          @update:modelValue="$emit('update:modelValue', $event)">
+      </collapsible-textarea>
+    </script>
+    <script type="text/x-template" id="jinja-script-template">
+      <collapsible-textarea 
+          :id="textareaId"
+          title="Jinja hook before render script"
+          language="python" 
+          placeholder="Optional: Enter script to run before rendering" 
+          :modelValue="modelValue" 
+          @update:modelValue="$emit('update:modelValue', $event)">
+      </collapsible-textarea>
+    </script>
+    <script type="text/x-template" id="llm-output-textarea-template">
+      <collapsible-textarea 
+          :id="textareaId"
+          title="LLM Output"
+          language="text" 
+          placeholder="Enter LLM output" 
+          :modelValue="modelValue" 
+          @update:modelValue="$emit('update:modelValue', $event)">
+      </collapsible-textarea>
+    </script>
+
+    <script src="main.js"></script>
+  </body>
+</html>

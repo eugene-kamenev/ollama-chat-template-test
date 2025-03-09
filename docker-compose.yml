@@ -1,0 +1,10 @@
+version: "3.8"
+services:  
+  nginx:
+    image: nginx:latest
+    container_name: nginx_server
+    ports:
+      - "9090:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./public_html:/usr/share/nginx/html:ro
